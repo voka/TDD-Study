@@ -2,7 +2,9 @@ package e2e;
 
 import Sniper.Main;
 
-import static e2e.FakeAuctionServer.REDIS_HOSTNAME;
+import static Sniper.MainWindow.STATUS_BIDDING;
+import static Sniper.MainWindow.STATUS_JOINING;
+import static Sniper.MainWindow.STATUS_LOST;
 
 public class ApplicationRunner {
     public static final String SNIPER_ID = "sniper";
@@ -15,7 +17,7 @@ public class ApplicationRunner {
             @Override
             public void run(){
                 try {
-                    Main.main(REDIS_HOSTNAME, auction.getItemId());
+                    Main.main(auction.getItemId());
                 }catch (Exception e){
                     e.printStackTrace();
                 }
@@ -27,14 +29,15 @@ public class ApplicationRunner {
         driver = new AuctionSniperDriver(1000);
         driver.showsSniperStatus(STATUS_JOINING);
     }
-    public void shopsSniperHasLostAuction(){
-        driver.showsSniperStatus(STATUS_LOST);
-    }
-
     public void showsSniperHasLostAuction() {
+        driver.showsSniperStatus(STATUS_LOST);
     }
 
     public void stop() {
 
+    }
+
+    public void hasShownSniperIsBidding() {
+        driver.showsSniperStatus(STATUS_BIDDING);
     }
 }

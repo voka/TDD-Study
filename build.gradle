@@ -10,7 +10,8 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'redis.clients', name: 'jedis', version: '4.2.3'
+    //implementation group: 'redis.clients', name: 'jedis', version: '4.2.3'
+    implementation 'io.lettuce:lettuce-core:6.2.0.RELEASE'
     implementation group: 'com.googlecode.windowlicker', name: 'windowlicker-core', version: 'r268'
     implementation group: 'com.googlecode.windowlicker', name: 'windowlicker-swing', version: 'r268'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.0'
