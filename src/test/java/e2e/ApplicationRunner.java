@@ -34,7 +34,7 @@ public class ApplicationRunner {
     }
 
     public void stop() {
-
+        driver.dispose();
     }
 
     public void hasShownSniperIsBidding() {

@@ -8,7 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-@TestInstance(Lifecycle.PER_CLASS)
+// 두 테스트
+@TestInstance(Lifecycle.PER_METHOD)
 public class AuctionSniperEndToEndTest {
     private final FakeAuctionServer auction = new FakeAuctionServer("item-54321");
     private final ApplicationRunner application = new ApplicationRunner();
