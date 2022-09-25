@@ -1,13 +1,12 @@
 package Sniper;
 
 import io.lettuce.core.RedisClient;
-import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.StatefulRedisPubSubConnection;
 import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import javax.swing.*;
 
-public class Main implements AuctionEventListener{
+public class Main implements SniperListener{
     public static final String JOIN_COMMAND_FORMAT = "EVENT : join;ID : %s";
     public static final String BID_COMMAND_FORMAT = "EVENT : bid;PRICE : %d;BIDDER : %s";
     public static final String MAIN_WINDOW = "main_window";
@@ -23,7 +22,7 @@ public class Main implements AuctionEventListener{
         startUserInterface();
         this.itemId = itemId;
         this.client = RedisClient.create("redis://localhost"); //생성자에서 하는걸 추천하심.
-        this.auctionMessageTranslator = new AuctionMessageTranslator(this);
+        this.auctionMessageTranslator = new AuctionMessageTranslator(new AuctionSniper(this));
         StatefulRedisPubSubConnection<String, String> publishConnection = client.connectPubSub();
         StatefulRedisPubSubConnection<String, String> subscribeConnection = client.connectPubSub();
         sync = publishConnection.sync();
@@ -50,22 +49,22 @@ public class Main implements AuctionEventListener{
     }
 
     @Override
-    public void auctionClosed() { // 직접 ui를 변경하면 먹통이 될 수도 있기 때문에 스윙 유틸리티 안에서 함.
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                ui.showsStatus(MainWindow.STATUS_LOST);
-            }
-        });
-    }
-
-    @Override
     public void currentPrice(int price, int increment) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 ui.showsStatus(MainWindow.STATUS_BIDDING);
                 sync.publish("SERVER-"+itemId, String.format(BID_COMMAND_FORMAT, price + increment, "sniper"));
+            }
+        });
+    }
+
+    @Override
+    public void sniperLost() { // 직접 ui를 변경하면 먹통이 될 수도 있기 때문에 스윙 유틸리티 안에서 함.
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                ui.showsStatus(MainWindow.STATUS_LOST);
             }
         });
     }
