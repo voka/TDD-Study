@@ -9,7 +9,9 @@ public class MainWindow extends JFrame {
     public static final String STATUS_JOINING = "joining";
     public static final String STATUS_LOST = "lost";
     public static final String STATUS_BIDDING = "bidding";
-    private final JLabel sniperStatus = createLabel(STATUS_JOINING);
+    public static final String STATUS_WINNING = "winning";
+  public static final String STATUS_WON = "won";
+  private final JLabel sniperStatus = createLabel(STATUS_JOINING);
     public MainWindow(){ // 사용자가 볼수있는 화면 한 개를 생성
         super("Auction_Sniper");
         setName(Main.MAIN_WINDOW);

@@ -82,6 +82,7 @@ public class FakeAuctionServer {
 
     public void stop(){
         client.close();
+        messageListener.clear();
     }
     public String getItemId() {
         return ItemId;

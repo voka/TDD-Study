@@ -37,4 +37,18 @@ public class AuctionSniperEndToEndTest {
         auction.announceClosed();
         application.showsSniperHasLostAuction();
     }
+
+    @Test
+    public void sniperWinsAnAuctionByBiddingHigher() throws Exception{
+        auction.startSellingItem();
+        application.startBindingIn(auction);
+        auction.hasReceivedJoinRequestFromSniper();
+        auction.reportPrice(1000,98,"other");
+        application.hasShownSniperIsBidding();
+        auction.hasReceivedBid(1098,SNIPER_ID);
+        auction.reportPrice(1098,100,SNIPER_ID);
+        auction.announceClosed();
+        application.showsSniperHasWonAuction();
+
+    }
 }

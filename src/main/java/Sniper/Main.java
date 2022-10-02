@@ -12,6 +12,7 @@ public class Main{
     public static final String JOIN_COMMAND_FORMAT = "EVENT : join;ID : %s";
     public static final String BID_COMMAND_FORMAT = "EVENT : bid;PRICE : %d;BIDDER : %s";
     public static final String MAIN_WINDOW = "main_window";
+    public static final String SNIPER_ID = "sniper";
 
     private AuctionMessageTranslator auctionMessageTranslator;
     private String itemId;
@@ -25,7 +26,7 @@ public class Main{
         this.client = RedisClient.create("redis://localhost"); //생성자에서 하는걸 추천하심.
         StatefulRedisPubSubConnection<String, String> subscribeConnection = client.connectPubSub();
         RedisAuction redisAuction = new RedisAuction(client.connectPubSub(),"SERVER-" + itemId);
-        this.auctionMessageTranslator = new AuctionMessageTranslator(new AuctionSniper(redisAuction,new SniperStateDisplayer())); // 위임~
+        this.auctionMessageTranslator = new AuctionMessageTranslator(new AuctionSniper(redisAuction,new SniperStateDisplayer()),SNIPER_ID); // 위임~
         redisAuction.join();
         subscribeConnection.addListener(auctionMessageTranslator);
         RedisPubSubAsyncCommands<String, String> async = subscribeConnection.async();
@@ -55,12 +56,12 @@ public class Main{
 
         @Override
         public void join() {
-            sendMessage(String.format(JOIN_COMMAND_FORMAT, "sniper"));
+            sendMessage(String.format(JOIN_COMMAND_FORMAT, SNIPER_ID));
         }
 
         @Override
         public void bid(int bidPrice) {
-            sendMessage(String.format(BID_COMMAND_FORMAT, bidPrice, "sniper"));
+            sendMessage(String.format(BID_COMMAND_FORMAT, bidPrice, SNIPER_ID));
         }
         private void sendMessage(String message){
             sync.publish(channel,message);
@@ -76,6 +77,16 @@ public class Main{
         @Override
         public void sniperBidding() {
             showStatus(MainWindow.STATUS_BIDDING);
+        }
+
+        @Override
+        public void sniperWinning() {
+            showStatus(MainWindow.STATUS_WINNING);
+        }
+
+        @Override
+        public void sniperWon() {
+            showStatus(MainWindow.STATUS_WON);
         }
 
         private void showStatus(final String status){

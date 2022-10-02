@@ -5,6 +5,7 @@ import Sniper.Main;
 import static Sniper.MainWindow.STATUS_BIDDING;
 import static Sniper.MainWindow.STATUS_JOINING;
 import static Sniper.MainWindow.STATUS_LOST;
+import static Sniper.MainWindow.STATUS_WINNING;
 
 public class ApplicationRunner {
     public static final String SNIPER_ID = "sniper";
@@ -40,4 +41,8 @@ public class ApplicationRunner {
     public void hasShownSniperIsBidding() {
         driver.showsSniperStatus(STATUS_BIDDING);
     }
+
+  public void showsSniperHasWonAuction() {
+        driver.showsSniperStatus(STATUS_WINNING);
+  }
 }

@@ -22,5 +22,8 @@ class SingleMessageListener {
     public void receivesAMessageMatcher(Matcher<? super String> matcher ) throws InterruptedException{
         assertThat(messages.poll(5,TimeUnit.SECONDS),matcher);
     }
+    public void clear(){
+        messages.clear();
+    }
 
 }

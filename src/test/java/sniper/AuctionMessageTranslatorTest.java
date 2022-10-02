@@ -1,6 +1,7 @@
 package sniper;
 
 import Sniper.AuctionEventListener;
+import Sniper.AuctionEventListener.PriceSource;
 import Sniper.AuctionMessageTranslator;
 import org.jmock.Expectations;
 import org.jmock.junit5.JUnit5Mockery;
@@ -14,7 +15,7 @@ public class AuctionMessageTranslatorTest {
 
   private final AuctionEventListener listener = context.mock(AuctionEventListener.class);
 
-  private final AuctionMessageTranslator translator = new AuctionMessageTranslator(listener);
+  private final AuctionMessageTranslator translator = new AuctionMessageTranslator(listener,"sniper");
   @Test
   //close 메시지를 받았을때 close
   public void notifiesAuctionCloseWhenCloseMessageReceived(){
@@ -24,9 +25,9 @@ public class AuctionMessageTranslatorTest {
     translator.message(null,"EVENT : close;");
   }
   @Test //가격정보 데이터가 주어졌을때 입찰 정보를 호출하는지 알아보는 테스트
-  public void notifiesBidDetailsWhenCurrentPriceMessageReceived(){
+  public void notifiesBidDetailsWhenCurrentPriceMessageReceivedFromOtherBidder(){
     context.checking(new Expectations(){{
-      oneOf(listener).currentPrice(925,5);
+      oneOf(listener).currentPrice(925,5, PriceSource.FromOtherBidder);
     }});
     translator.message(null, "EVENT : price;CURRENT : 925;INCREMENT : 5;BIDDER : js;");
   }
@@ -35,5 +36,13 @@ public class AuctionMessageTranslatorTest {
 //    HashMap<String,String> event =  translator.messageFormatFrom("EVENT : close;");
 //    assertEquals(event.get("EVENT"),"close");
 //  }
+@Test //가격정보 데이터가 주어졌을때 입찰 정보를 호출하는지 알아보는 테스트
+public void notifiesBidDetailsWhenCurrentPriceMessageReceivedFromSniper(){
+  context.checking(new Expectations(){{
+    oneOf(listener).currentPrice(925,5, PriceSource.FromSniper);
+  }});
+  translator.message(null, "EVENT : price;CURRENT : 925;INCREMENT : 5;BIDDER : sniper;");
+}
+
 
 }

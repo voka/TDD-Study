@@ -1,5 +1,6 @@
 package Sniper;
 
+import Sniper.AuctionEventListener.PriceSource;
 import io.lettuce.core.pubsub.RedisPubSubListener;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import java.util.Arrays;
@@ -11,8 +12,10 @@ import java.util.stream.Collectors;
 public class AuctionMessageTranslator implements RedisPubSubListener<String,String> {
 
   private AuctionEventListener listener;
-  public AuctionMessageTranslator(AuctionEventListener listener) {
+  private String sniperId;
+  public AuctionMessageTranslator(AuctionEventListener listener, final String sniperId) {
     this.listener = listener;
+    this.sniperId = sniperId;
   }
   private static class AuctionEvent{
     private final Map<String,String> fields = new HashMap<>();
@@ -30,6 +33,13 @@ public class AuctionMessageTranslator implements RedisPubSubListener<String,Stri
     }
     public int increment(){
       return getInt("INCREMENT");
+    }
+
+    private String bidder(){
+      return get("BIDDER");
+    }
+    public PriceSource isFrom(String sniperId){
+      return sniperId.equals(bidder()) ? PriceSource.FromSniper : PriceSource.FromOtherBidder;
     }
     public void put(String field){
       String [] pair = field.split(":");
@@ -55,7 +65,8 @@ public class AuctionMessageTranslator implements RedisPubSubListener<String,Stri
     if("close".equals(type)){ // 이렇게 사용하면 type 이 null 이여도 NullPointer Exception 오류가 발생 X
       listener.auctionClosed();
     } else if ("price".equals(type)) {
-      listener.currentPrice(event.currentPrice(),event.increment());
+      listener.currentPrice(event.currentPrice(),event.increment(),event.isFrom(sniperId));
+
     }
   }
 
