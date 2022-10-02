@@ -6,30 +6,27 @@ import io.lettuce.core.pubsub.api.async.RedisPubSubAsyncCommands;
 import io.lettuce.core.pubsub.api.sync.RedisPubSubCommands;
 import javax.swing.*;
 
-public class Main implements SniperListener{
+// Bottom-Up 방식으로 구현 -> 에러가 적게나고 자동완성 도움을 받을 수 있다.
+// Top-Down 방식으로 구현 -> 함수 이름부터 동작하는 코드까지 필요한 것만 작성해서 좋다.
+public class Main{
     public static final String JOIN_COMMAND_FORMAT = "EVENT : join;ID : %s";
     public static final String BID_COMMAND_FORMAT = "EVENT : bid;PRICE : %d;BIDDER : %s";
     public static final String MAIN_WINDOW = "main_window";
 
-    private RedisPubSubCommands<String, String> sync;
     private AuctionMessageTranslator auctionMessageTranslator;
     private String itemId;
     private MainWindow ui;
 
-    private RedisClient client;
+    private RedisClient client; // 멤버로 쓸 생각은 없지만 가비지 컬렉션을 방지하기 위해 살려둠
 
     public Main(String itemId) throws Exception{
         startUserInterface();
         this.itemId = itemId;
         this.client = RedisClient.create("redis://localhost"); //생성자에서 하는걸 추천하심.
-        this.auctionMessageTranslator = new AuctionMessageTranslator(new AuctionSniper(this));
-        StatefulRedisPubSubConnection<String, String> publishConnection = client.connectPubSub();
         StatefulRedisPubSubConnection<String, String> subscribeConnection = client.connectPubSub();
-        sync = publishConnection.sync();
-        sync.publish("SERVER-" + itemId, String.format(JOIN_COMMAND_FORMAT, "sniper")); // 서버한테 보내는 거
-
-        // Bottom-Up 방식으로 구현 -> 에러가 적게나고 자동완성 도움을 받을 수 있다.
-        // Top-Down 방식으로 구현 -> 함수 이름부터 동작하는 코드까지 필요한 것만 작성해서 좋다.
+        RedisAuction redisAuction = new RedisAuction(client.connectPubSub(),"SERVER-" + itemId);
+        this.auctionMessageTranslator = new AuctionMessageTranslator(new AuctionSniper(redisAuction,new SniperStateDisplayer())); // 위임~
+        redisAuction.join();
         subscribeConnection.addListener(auctionMessageTranslator);
         RedisPubSubAsyncCommands<String, String> async = subscribeConnection.async();
         async.subscribe("AUCTION-"+itemId);
@@ -48,25 +45,44 @@ public class Main implements SniperListener{
         });
     }
 
-    @Override
-    public void currentPrice(int price, int increment) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                ui.showsStatus(MainWindow.STATUS_BIDDING);
-                sync.publish("SERVER-"+itemId, String.format(BID_COMMAND_FORMAT, price + increment, "sniper"));
-            }
-        });
-    }
+    public static class RedisAuction implements Auction{
+        String channel;
+        RedisPubSubCommands<String, String> sync;
+        public RedisAuction(StatefulRedisPubSubConnection<String, String> connection, String channel) {
+            this.sync = connection.sync();
+            this.channel = channel;
+        }
 
-    @Override
-    public void sniperLost() { // 직접 ui를 변경하면 먹통이 될 수도 있기 때문에 스윙 유틸리티 안에서 함.
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                ui.showsStatus(MainWindow.STATUS_LOST);
-            }
-        });
+        @Override
+        public void join() {
+            sendMessage(String.format(JOIN_COMMAND_FORMAT, "sniper"));
+        }
+
+        @Override
+        public void bid(int bidPrice) {
+            sendMessage(String.format(BID_COMMAND_FORMAT, bidPrice, "sniper"));
+        }
+        private void sendMessage(String message){
+            sync.publish(channel,message);
+        }
+    }
+    public class SniperStateDisplayer implements SniperListener{
+
+        @Override
+        public void sniperLost() {
+            showStatus(MainWindow.STATUS_LOST);
+        }
+
+        @Override
+        public void sniperBidding() {
+            showStatus(MainWindow.STATUS_BIDDING);
+        }
+
+        private void showStatus(final String status){
+            SwingUtilities.invokeLater(()->{
+                ui.showsStatus(status);
+            });
+        }
     }
 }
 
